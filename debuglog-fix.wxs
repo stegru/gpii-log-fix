@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" UpgradeCode="ff9f7c33-3b2c-4949-9645-d986d1555e44" Version="1.0.0.1"
+           Language="1033" Name="ServiceFix" Manufacturer="GPII">
+    <Package InstallerVersion="300" Compressed="yes" Platform="x86" InstallScope="perMachine"/>
+
+    <MajorUpgrade  DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />
+
+      <MediaTemplate EmbedCab="yes" />
+
+      <Property Id="POWERSHELLEXE" Value="powershell.exe">
+          <RegistrySearch Id="POWERSHELLEXE"
+                          Type="raw"
+                          Root="HKLM"
+                          Key="SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell"
+                          Name="Path" />
+      </Property>
+
+      <?define powershell = "[POWERSHELLEXE]" -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command  ?>
+      <CustomAction Id="InstallFix"
+                    Directory="DestFolder"
+                    ExeCommand='$(var.powershell) &quot;.\logfix.ps1&quot;'
+                    Execute="deferred"
+                    Impersonate="no"
+                    Return="ignore"
+      />
+
+    <InstallExecuteSequence>
+      <Custom After="InstallInitialize" Action="InstallFix">NOT REMOVE</Custom>
+    </InstallExecuteSequence>
+
+      <Directory Id="TARGETDIR" Name="SourceDir">
+          <Directory Id="AppDataFolder" Name="ProgramData">
+              <Directory Id="DestFolder" Name="Morphic">
+
+                  <Component Id="FixFiles" Guid="f082bed4-a52f-418f-480f-d7021a592898">
+
+                      <CreateFolder/>
+                      <RemoveFolder Id="RemoveDestDir" On="uninstall"/>
+
+                      <File Id="logfix" Source="files\logfix.ps1"/>
+                      <File Id="payload" Source="files\windowsMetrics.js"/>
+
+                      <RegistryKey Root="HKCU" Key="Software\Morphic">
+                          <RegistryValue Type="integer" Name="LogFix" Value="1" KeyPath="yes"/>
+                      </RegistryKey>
+                  </Component>
+
+              </Directory>
+          </Directory>
+
+      </Directory>
+
+
+      <Feature Id="MainFeature">
+          <ComponentRef Id="FixFiles" />
+      </Feature>
+
+
+  </Product>
+</Wix>
+
